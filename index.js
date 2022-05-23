@@ -24,11 +24,11 @@ async function run() {
 
         // get items 
         app.get('/part', async (req, res) => {
-            const part = await partCollection.find().toArray();
+            const part = (await partCollection.find().toArray()).reverse();
             res.send(part)
         })
         app.get('/review', async (req, res) => {
-            const review = await reviewCollection.find().toArray();
+            const review = (await reviewCollection.find().toArray()).reverse();
             res.send(review)
         })
 
