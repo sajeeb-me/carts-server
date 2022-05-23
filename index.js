@@ -19,24 +19,29 @@ async function run() {
     try {
         await client.connect();
         const partCollection = client.db("carts").collection("parts");
-        const userCollection = client.db("carts").collection("users");
+        const reviewCollection = client.db("carts").collection("reviews");
+        // const userCollection = client.db("carts").collection("users");
 
         // get items 
         app.get('/part', async (req, res) => {
             const part = await partCollection.find().toArray();
             res.send(part)
         })
-
-        // put
-        app.put('/user/:email', async (req, res) => {
-            const filter = req.params;
-            const user = req.body;
-            const options = { upsert: true };
-            const updateDoc = { $set: user };
-            const result = await userCollection.updateOne(filter, updateDoc, options);
-            const secretToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-            res.send({ result, secretToken })
+        app.get('/review', async (req, res) => {
+            const review = await reviewCollection.find().toArray();
+            res.send(review)
         })
+
+        // // put
+        // app.put('/user/:email', async (req, res) => {
+        //     const filter = req.params;
+        //     const user = req.body;
+        //     const options = { upsert: true };
+        //     const updateDoc = { $set: user };
+        //     const result = await userCollection.updateOne(filter, updateDoc, options);
+        //     const secretToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+        //     res.send({ result, secretToken })
+        // })
 
 
     } catch (error) {
