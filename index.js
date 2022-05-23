@@ -10,6 +10,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -24,6 +25,7 @@ function verifyJWT(req, res, next) {
         next()
     })
 }
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rmytb.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -41,20 +43,23 @@ async function run() {
             const part = (await partCollection.find().toArray()).reverse();
             res.send(part)
         })
-
-        app.get('/review', async (req, res) => {
-            const review = (await reviewCollection.find().toArray()).reverse();
-            res.send(review)
-        })
         app.get('/part/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) }
             const part = await partCollection.findOne(filter);
             res.send(part)
         })
+        app.get('/order', async (req, res) => {
+            const order = (await orderCollection.find().toArray()).reverse();
+            res.send(order)
+        })
+        app.get('/review', async (req, res) => {
+            const review = (await reviewCollection.find().toArray()).reverse();
+            res.send(review)
+        })
 
         // post
-        app.post('/order', async (req, res) => {
+        app.post('/order', verifyJWT, async (req, res) => {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
             res.send(result)
