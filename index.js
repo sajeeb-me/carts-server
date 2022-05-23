@@ -21,6 +21,7 @@ async function run() {
         const partCollection = client.db("carts").collection("parts");
         const reviewCollection = client.db("carts").collection("reviews");
         const userCollection = client.db("carts").collection("users");
+        const orderCollection = client.db("carts").collection("orders");
 
         // get items 
         app.get('/part', async (req, res) => {
@@ -38,6 +39,14 @@ async function run() {
             const part = await partCollection.findOne(filter);
             res.send(part)
         })
+
+        // post
+        app.post('/order', async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
+            res.send(result)
+        })
+
         // put
         app.put('/user/:email', async (req, res) => {
             const filter = req.params;
