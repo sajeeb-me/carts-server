@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors');
 const jwt = require('jsonwebtoken')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
@@ -20,28 +20,29 @@ async function run() {
         await client.connect();
         const partCollection = client.db("carts").collection("parts");
         const reviewCollection = client.db("carts").collection("reviews");
-        // const userCollection = client.db("carts").collection("users");
+        const userCollection = client.db("carts").collection("users");
 
         // get items 
         app.get('/part', async (req, res) => {
             const part = (await partCollection.find().toArray()).reverse();
             res.send(part)
         })
+
         app.get('/review', async (req, res) => {
             const review = (await reviewCollection.find().toArray()).reverse();
             res.send(review)
         })
 
-        // // put
-        // app.put('/user/:email', async (req, res) => {
-        //     const filter = req.params;
-        //     const user = req.body;
-        //     const options = { upsert: true };
-        //     const updateDoc = { $set: user };
-        //     const result = await userCollection.updateOne(filter, updateDoc, options);
-        //     const secretToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-        //     res.send({ result, secretToken })
-        // })
+        // put
+        app.put('/user/:email', async (req, res) => {
+            const filter = req.params;
+            const user = req.body;
+            const options = { upsert: true };
+            const updateDoc = { $set: user };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            const secretToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+            res.send({ result, secretToken })
+        })
 
 
     } catch (error) {
