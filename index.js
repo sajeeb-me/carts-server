@@ -32,7 +32,12 @@ async function run() {
             const review = (await reviewCollection.find().toArray()).reverse();
             res.send(review)
         })
-
+        app.get('/part/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const part = await partCollection.findOne(filter);
+            res.send(part)
+        })
         // put
         app.put('/user/:email', async (req, res) => {
             const filter = req.params;
