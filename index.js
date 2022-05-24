@@ -77,6 +77,11 @@ async function run() {
             const result = await orderCollection.insertOne(order);
             res.send(result)
         })
+        app.post('/review', verifyJWT, async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result)
+        })
 
         app.post("/create-payment-intent", verifyJWT, async (req, res) => {
             const { price } = req.body;
@@ -121,7 +126,7 @@ async function run() {
             res.send({ result, payment })
         })
 
-        app.patch('/profile/:email', async (req, res) => {
+        app.patch('/profile/:email', verifyJWT, async (req, res) => {
             const filter = req.params;
             const profile = req.body;
             const updateDoc = { $set: profile };
