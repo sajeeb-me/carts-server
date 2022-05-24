@@ -121,6 +121,14 @@ async function run() {
             res.send({ result, payment })
         })
 
+        app.patch('/profile/:email', async (req, res) => {
+            const filter = req.params;
+            const profile = req.body;
+            const updateDoc = { $set: profile };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result)
+        })
+
 
         // delete
         app.delete('/order/:id', verifyJWT, async (req, res) => {
