@@ -70,6 +70,11 @@ async function run() {
             res.send(review)
         })
 
+        app.get('/user', verifyJWT, async (req, res) => {
+            const user = (await userCollection.find().toArray());
+            res.send(user)
+        })
+
 
         // post
         app.post('/order', verifyJWT, async (req, res) => {
@@ -130,6 +135,15 @@ async function run() {
             const filter = req.params;
             const profile = req.body;
             const updateDoc = { $set: profile };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result)
+        })
+
+        app.patch('/user/admin/:email', verifyJWT, async (req, res) => {
+            const filter = req.params;
+            const updateDoc = {
+                $set: { role: 'admin' }
+            };
             const result = await userCollection.updateOne(filter, updateDoc);
             res.send(result)
         })
