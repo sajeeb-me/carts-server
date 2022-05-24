@@ -3,6 +3,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -37,6 +38,7 @@ async function run() {
         const reviewCollection = client.db("carts").collection("reviews");
         const userCollection = client.db("carts").collection("users");
         const orderCollection = client.db("carts").collection("orders");
+        const paymentCollection = client.db("carts").collection("payments");
 
         // get items 
         app.get('/part', async (req, res) => {
@@ -49,14 +51,25 @@ async function run() {
             const part = await partCollection.findOne(filter);
             res.send(part)
         })
-        app.get('/order', async (req, res) => {
-            const order = (await orderCollection.find().toArray()).reverse();
+
+        app.get('/order', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const query = { email }
+            const order = (await orderCollection.find(query).toArray()).reverse();
             res.send(order)
         })
+        app.get('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const order = await orderCollection.findOne(filter);
+            res.send(order)
+        })
+
         app.get('/review', async (req, res) => {
             const review = (await reviewCollection.find().toArray()).reverse();
             res.send(review)
         })
+
 
         // post
         app.post('/order', verifyJWT, async (req, res) => {
@@ -64,6 +77,21 @@ async function run() {
             const result = await orderCollection.insertOne(order);
             res.send(result)
         })
+
+        app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+            const { price } = req.body;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        })
+
 
         // put
         app.put('/user/:email', async (req, res) => {
@@ -74,6 +102,32 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, options);
             const secretToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
             res.send({ result, secretToken })
+        })
+
+
+        // patch
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const paymentInfo = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    // paid: true,
+                    transitionId: paymentInfo.transitionId
+                }
+            }
+            const result = await orderCollection.updateOne(filter, updateDoc);
+            const payment = await paymentCollection.insertOne(paymentInfo);
+            res.send({ result, payment })
+        })
+
+
+        // delete
+        app.delete('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(query);
+            res.send(result);
         })
 
 
