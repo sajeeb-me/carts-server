@@ -105,6 +105,12 @@ async function run() {
             const result = await reviewCollection.insertOne(review);
             res.send(result)
         })
+        app.post('/part', verifyJWT, async (req, res) => {
+            const part = req.body;
+            const result = await partCollection.insertOne(part);
+            res.send(result)
+        })
+
 
         app.post("/create-payment-intent", verifyJWT, async (req, res) => {
             const { price } = req.body;
