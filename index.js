@@ -77,6 +77,11 @@ async function run() {
             res.send(order)
         })
 
+        app.get('/all-order', verifyJWT, verifyAdmin, async (req, res) => {
+            const order = (await orderCollection.find().toArray()).reverse();
+            res.send(order)
+        })
+
         app.get('/review', async (req, res) => {
             const review = (await reviewCollection.find().toArray()).reverse();
             res.send(review)
@@ -146,13 +151,26 @@ async function run() {
             const filter = { _id: ObjectId(id) };
             const updateDoc = {
                 $set: {
-                    // paid: true,
                     transitionId: paymentInfo.transitionId
                 }
             }
             const result = await orderCollection.updateOne(filter, updateDoc);
             const payment = await paymentCollection.insertOne(paymentInfo);
             res.send({ result, payment })
+        })
+
+        app.patch('/all-order/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const shipmentInfo = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    shipped: shipmentInfo.shipped
+                }
+            }
+            const result = await orderCollection.updateOne(filter, updateDoc);
+            res.send(result)
         })
 
         app.patch('/profile/:email', verifyJWT, async (req, res) => {
