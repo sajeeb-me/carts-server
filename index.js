@@ -180,7 +180,7 @@ async function run() {
             const user = await userCollection.find().toArray()
             res.send(user)
         })
-        app.get('/user/:id', async (req, res) => {
+        app.get('/user/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) }
             const user = await userCollection.findOne(filter)
@@ -191,6 +191,12 @@ async function run() {
             const user = await userCollection.findOne(email);
             const isAdmin = user.role === 'admin';
             res.send({ admin: isAdmin })
+        })
+        app.get('/profile', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const filter = { email }
+            const user = await userCollection.findOne(filter)
+            res.send(user)
         })
 
 
