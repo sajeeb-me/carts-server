@@ -4,12 +4,17 @@ const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const nodemailer = require('nodemailer');
+const mg = require('nodemailer-mailgun-transport');
 
 const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rmytb.mongodb.net/?retryWrites=true&w=majority`;
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
 function verifyJWT(req, res, next) {
@@ -28,8 +33,92 @@ function verifyJWT(req, res, next) {
 }
 
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rmytb.mongodb.net/?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+const auth = {
+    auth: {
+        api_key: process.env.EMAIL_SENDER_KEY,
+        domain: process.env.EMAIL_SENDER_DOMAIN
+    }
+}
+
+const nodemailerMailgun = nodemailer.createTransport(mg(auth));
+
+function sendPaymentConfirmationEmail(paymentInfo) {
+    const { totalPrice, quantity, productName, transitionId, name, address, phone, email } = paymentInfo;
+
+    const emailTemplate = {
+        from: process.env.EMAIL_SENDER,
+        to: email,
+        subject: `Successfully received payment for ${productName}`,
+        text: `Successfully received payment for ${productName}`,
+        html: `
+      <div>
+        <p> Hello ${name}, </p>
+        <h3>We have received $${totalPrice} for ${productName} (Quantity: ${quantity})</h3>
+
+        <p>You will get your product when your order status on Dashboard will be "Shipped"</p>
+        <p>Transition Id: ${transitionId}</p>
+        <p>Shipment address: ${address}</p>
+        <p>Contact no: ${phone}</p>
+
+        <p>
+        <h4>Our Address</h4>
+        Zindabazar, Sylhet
+        <br/>
+        Bangladesh
+        <br/>
+        <a href="https://carts-68435.web.app/">Thank you</a>
+        </p>
+      </div>
+    `
+    };
+    nodemailerMailgun.sendMail(emailTemplate, (err, info) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            console.log(info);
+        }
+    });
+
+}
+
+function sendShipmentInfoEmail(shipmentInfo) {
+    const { emailNotification } = shipmentInfo;
+
+    const emailTemplate = {
+        from: process.env.EMAIL_SENDER,
+        to: emailNotification,
+        subject: `Successfully shipped your product`,
+        text: `Successfully shipped your product`,
+        html: `
+      <div>
+        <p> Hello, </p>
+        <h3>Your product is shipped successfully</h3>
+
+        <p>Thanks for shopping with us!</p>
+
+        <p>Please drop your valuable feedback on "Add a review" Section.</p>
+
+        <p>
+        <h4>Our Address</h4>
+        Zindabazar, Sylhet
+        <br/>
+        Bangladesh
+        <br/>
+        <a href="https://carts-68435.web.app/">Thank you</a>
+        </p>
+      </div>
+    `
+    };
+    nodemailerMailgun.sendMail(emailTemplate, (err, info) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            console.log(info);
+        }
+    });
+}
 
 async function run() {
     try {
@@ -89,6 +178,12 @@ async function run() {
 
         app.get('/user', verifyJWT, verifyAdmin, async (req, res) => {
             const user = await userCollection.find().toArray()
+            res.send(user)
+        })
+        app.get('/user/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const user = await userCollection.findOne(filter)
             res.send(user)
         })
         app.get('/user/admin/:email', verifyJWT, async (req, res) => {
@@ -156,12 +251,14 @@ async function run() {
             }
             const result = await orderCollection.updateOne(filter, updateDoc);
             const payment = await paymentCollection.insertOne(paymentInfo);
+            sendPaymentConfirmationEmail(paymentInfo);
             res.send({ result, payment })
         })
 
         app.patch('/all-order/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const shipmentInfo = req.body;
+            // console.log(shipmentInfo);
             const filter = { _id: ObjectId(id) };
             const updateDoc = {
                 $set: {
@@ -170,6 +267,7 @@ async function run() {
                 }
             }
             const result = await orderCollection.updateOne(filter, updateDoc);
+            sendShipmentInfoEmail(shipmentInfo);
             res.send(result)
         })
 
@@ -212,7 +310,6 @@ async function run() {
     }
 }
 run().catch(console.dir);
-
 
 app.get('/', (req, res) => {
     res.send('Hello World from CARTS!')
