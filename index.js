@@ -195,6 +195,7 @@ async function run() {
         app.get('/profile', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const filter = { email }
+            // console.log(filter);
             const user = await userCollection.findOne(filter)
             res.send(user)
         })
