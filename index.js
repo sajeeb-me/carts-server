@@ -23,8 +23,10 @@ function verifyJWT(req, res, next) {
         return res.status(401).send({ message: 'Unauthorized access' })
     }
     const token = authHeader.split(' ')[1];
+    // console.log('token', token);
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
+            // console.log(err)
             return res.status(403).send({ message: 'Forbidden access' })
         }
         req.decoded = decoded;
@@ -241,7 +243,7 @@ async function run() {
             const options = { upsert: true };
             const updateDoc = { $set: user };
             const result = await userCollection.updateOne(filter, updateDoc, options);
-            const secretToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+            const secretToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '6h' });
             res.send({ result, secretToken })
         })
 
