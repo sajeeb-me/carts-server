@@ -124,7 +124,7 @@ function sendShipmentInfoEmail(shipmentInfo) {
 
 async function run() {
     try {
-        await client.connect();
+        client.connect();
         const partCollection = client.db("carts").collection("parts");
         const reviewCollection = client.db("carts").collection("reviews");
         const userCollection = client.db("carts").collection("users");
@@ -150,7 +150,7 @@ async function run() {
         })
         app.get('/part/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
-            const filter = { _id: ObjectId(id) }
+            const filter = { _id: new ObjectId(id) }
             const part = await partCollection.findOne(filter);
             res.send(part)
         })
@@ -163,7 +163,7 @@ async function run() {
         })
         app.get('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
-            const filter = { _id: ObjectId(id) }
+            const filter = { _id: new ObjectId(id) }
             const order = await orderCollection.findOne(filter);
             res.send(order)
         })
@@ -184,7 +184,7 @@ async function run() {
         })
         app.get('/user/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
-            const filter = { _id: ObjectId(id) }
+            const filter = { _id: new ObjectId(id) }
             const user = await userCollection.findOne(filter)
             res.send(user)
         })
@@ -252,7 +252,7 @@ async function run() {
         app.patch('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const paymentInfo = req.body;
-            const filter = { _id: ObjectId(id) };
+            const filter = { _id: new ObjectId(id) };
             const updateDoc = {
                 $set: {
                     transitionId: paymentInfo.transitionId
@@ -268,7 +268,7 @@ async function run() {
             const id = req.params.id;
             const shipmentInfo = req.body;
             // console.log(shipmentInfo);
-            const filter = { _id: ObjectId(id) };
+            const filter = { _id: new ObjectId(id) };
             const updateDoc = {
                 $set: {
                     paid: true,
@@ -301,14 +301,14 @@ async function run() {
         // delete
         app.delete('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
-            const query = { _id: ObjectId(id) };
+            const query = { _id: new ObjectId(id) };
             const result = await orderCollection.deleteOne(query);
             res.send(result);
         })
 
         app.delete('/part/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const query = { _id: ObjectId(id) };
+            const query = { _id: new ObjectId(id) };
             const result = await partCollection.deleteOne(query);
             res.send(result);
         })
